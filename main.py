@@ -22,7 +22,7 @@ app = FastAPI(
 )
 
 
-@app.post("/evaluate", response_model=EvaluationResponse)
+@app.post("/evaluate", response_model=EvaluationResponse, response_model_exclude_none=True)
 async def evaluate(request: EvaluationRequest):
     try:
         evaluator = get_evaluator()
@@ -30,9 +30,25 @@ async def evaluate(request: EvaluationRequest):
             "question": request.question,
             "answer": request.answer,
             "criteria": request.criteria,
+            "metadata": request.metadata.model_dump() if request.metadata else None,
             "score": 0,
             "reason": "",
+            "context_precision": None,
+            "context_recall": None,
+            "context_entities_recall": None,
+            "noise_sensitivity": None,
+            "response_relavancy": None,
+            "faithfulness": None,
         })
-        return EvaluationResponse(score=result["score"], reason=result["reason"])
+        return EvaluationResponse(
+            score=result["score"],
+            reason=result["reason"],
+            context_precision=result.get("context_precision"),
+            context_recall=result.get("context_recall"),
+            context_entities_recall=result.get("context_entities_recall"),
+            noise_sensitivity=result.get("noise_sensitivity"),
+            response_relavancy=result.get("response_relavancy"),
+            faithfulness=result.get("faithfulness"),
+        )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
